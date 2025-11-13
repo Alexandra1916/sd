@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Galaxia y Mariposas ✨</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;background:#000;}
+  body{font-family:'Poppins',sans-serif;color:white;}
+
+  /* --- Fondo galaxia --- */
+  #galaxy-canvas{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    display:block;
+  }
+
+  /* --- Contenedor de escena 2D --- */
+  #scene {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    perspective: 1000px;
+    transform-style: preserve-3d;
+    overflow: hidden;
+  }
+  .rotatable {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease-out;
+  }
+
+  /* --- Fotos --- */
+  .fall-photo{
+    position:absolute;
+    z-index:2;
+    animation:sway 6s ease-in-out infinite;
+  }
+  .fall-photo img{
+    width:120px;
+    height:90px;
+    object-fit:cover;
+    border-radius:12px;
+    box-shadow:0 6px 14px rgba(0,0,0,.7);
+  }
+
+  /* --- Frases --- */
+  .fall-text{
+    position:absolute;
+    font-size:16px;
+    color:#fff;
+    text-shadow:0 0 10px rgba(255,255,255,0.8);
+    font-weight:500;
+    z-index:3;
+  }
+
+  @keyframes sway{
+    0%,100%{transform:translateX(0);}
+    50%{transform:translateX(25px);}
+  }
+
+  /* --- Mariposas --- */
+  .butterfly{
+    position:absolute;
+    width:60px;height:60px;
+    opacity:0.8;
+    z-index:1;
+    filter:drop-shadow(0 0 6px rgba(255,255,255,0.5));
+  }
+  .butterfly svg{
+    width:100%;height:100%;
+    animation:flap 1.2s ease-in-out infinite;
+  }
+  @keyframes flap{
+    0%,100%{transform:rotateY(0deg);}
+    50%{transform:rotateY(40deg);}
+  }
+  @keyframes glowTrail{
+    from{filter:drop-shadow(0 0 8px rgba(255,255,255,0.5));}
+    to{filter:drop-shadow(0 0 25px rgba(255,255,255,0.9));}
+  }
+
+  /* --- Botón música --- */
+  #music-btn{
+    position:fixed;bottom:20px;right:20px;
+    width:60px;height:60px;
+    border:none;border-radius:50%;
+    background:rgba(255,255,255,.15);
+    color:#fff;font-size:22px;
+    cursor:pointer;
+    box-shadow:0 0 12px rgba(255,255,255,.3);
+    z-index:10;
+  }
+</style>
+</head>
+<body>
+<canvas id="galaxy-canvas"></canvas>
+<div id="scene">
+  <div class="rotatable" id="rotatable"></div>
+</div>
+
+<audio id="bg-music" loop>
+  <source src="musica.mp3" type="audio/mpeg">
+</audio>
+<button id="music-btn">🎵</button>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from "three";
+
+/* ===== GALAXIA ===== */
+const canvas = document.getElementById("galaxy-canvas");
+const renderer = new THREE.WebGLRenderer({ canvas });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+const scene3D = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 5;
+
+// Estrellas
+const starsGeometry = new THREE.BufferGeometry();
+const starCount = 2000;
+const positions = [];
+for (let i = 0; i < starCount; i++) {
+  positions.push((Math.random() - 0.5) * 1000);
+  positions.push((Math.random() - 0.5) * 1000);
+  positions.push((Math.random() - 0.5) * 1000);
+}
+starsGeometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.8 });
+const stars = new THREE.Points(starsGeometry, starsMaterial);
+scene3D.add(stars);
+
+function animateGalaxy() {
+  requestAnimationFrame(animateGalaxy);
+  stars.rotation.x += 0.0004;
+  stars.rotation.y += 0.0003;
+  renderer.render(scene3D, camera);
+}
+animateGalaxy();
+
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* ===== ESCENA 2D ===== */
+const rotatable = document.getElementById("rotatable");
+const photos = ["fotos/1.jpg", "fotos/2.jpg", "fotos/3.jpg", "fotos/4.jpg", "fotos/5.jpg"];
+const phrases = [
+  "Tu sonrisa es mi universo 🌌",
+  "Te pienso en cada estrella ✨",
+  "Mi mundo brilla cuando estás 💖",
+  "Eres mi cielo favorito 🌙",
+  "Sueño contigo cada noche 🌠",
+  "Eres la razón de mis días más felices ☀️",
+  "Tu voz calma mi mundo 🌈",
+  "Te amo más de lo que imaginas 💞",
+  "Eres mi paz entre tanto ruido 🌿",
+  "Desde que llegaste, todo tiene sentido 💫",
+  "Tú haces que lo simple sea mágico ✨",
+  "Eres mi pensamiento favorito del día 🩷",
+  "Mi corazón sonríe cuando pienso en ti 😊",
+  "Siempre tú, en cada latido ❤️",
+  "Eres mi lugar seguro 🏡",
+  "Mi vida es mejor contigo 🌻",
+  "Te amo más allá del tiempo ⏳💖",
+  "Eres mi casualidad más bonita 🌷",
+  "Tu risa es mi melodía favorita 🎶",
+  "Eres luz en mis días nublados ☁️✨",
+  "No necesito mucho, solo tenerte a ti 💕",
+  "Eres el poema más bonito que la vida escribió 🖋️",
+  "Cada mirada tuya ilumina mi mundo 🔆",
+  "Mi felicidad empieza contigo 💗",
+  "Eres mi presente y mi futuro 🌙",
+  "Te amo con el alma, sin final 💞",
+  "Eres mi estrella que nunca deja de brillar 🌟",
+  "Siempre contigo, sin importar la distancia 🌍",
+  "Eres mi sueño más bonito hecho realidad 🌠",
+  "Me encantas, más de lo que puedo explicar 💘",
+  "Tú haces que todo valga la pena 💫",
+  "Te amo infinitamente ♾️💖",
+  "Mi amor por ti no tiene límites 🚀",
+  "Eres mi amanecer y mi anochecer 🌅🌌",
+  "Sin ti, las estrellas no brillan igual ✨",
+  "Eres lo mejor que me pasó 💝",
+  "Cada segundo contigo es magia pura 🪄",
+  "Tú eres mi destino 💫",
+  "Te amo sin pausas ni puntos finales 💗",
+  "Eres el latido que me da vida ❤️‍🔥",
+  "Tú y yo, por siempre 🌙💞",
+  "Eres el sol que derrite mi tristeza ☀️",
+  "Solo tú haces que mi corazón sonría 🩵",
+  "Eres mi razón para creer en el amor 💖",
+  "Te pienso, te extraño, te amo 💫",
+  "Amooor, eres ufff💖",
+  "Tú haces que el universo valga la pena 🌌",
+  "Mi vida 💖",
+  "Eres el arte más hermoso que he visto 🎨💘",
+  "Tu amor me enseña a volar 🦋",
+  "Mi bb💖",
+  "Contigo, todo es mejor 💕",
+  "Mi nenito 💖",
+  "Mi mundo eres tú 🌍💞",
+  "Eres mi hoy y todos mis mañanas 🌤️",
+  "Eres mi infinito favorito ♾️💗",
+  "Te amo más que las palabras 🌷",
+  "Siempre serás mi persona especial 💞",
+  "Tu nombre vive en mi corazón ❤️",
+  "Eres mi luz en medio de la oscuridad 🌠",
+  "Mi mundo 💖",
+  "Mi osito hibernador💖",
+  "Nada se compara a ti 💝",
+  "Te amo más cada día 💖",
+  "Eres mi destino más bonito ✨",
+  "Mi universo empieza y termina en ti 🌌"
+];
+
+/* --- Crear elementos infinitos --- */
+function createFallingItem() {
+  const isPhoto = Math.random() < 0.5;
+  const el = document.createElement("div");
+
+  if (isPhoto) {
+    el.className = "fall-photo";
+    const img = document.createElement("img");
+    img.src = photos[Math.floor(Math.random() * photos.length)];
+    el.appendChild(img);
+  } else {
+    el.className = "fall-text";
+    el.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+  }
+
+  el.style.left = Math.random() * 100 + "vw";
+  el.style.top = "-150px";
+  rotatable.appendChild(el);
+
+  // Animación más rápida y con generación continua
+  const duration = 3000 + Math.random() * 3000; // 3 a 6 segundos
+  const translateY = window.innerHeight + 200;
+
+  const anim = el.animate(
+    [{ transform: "translateY(0)" }, { transform: `translateY(${translateY}px)` }],
+    { duration, easing: "linear" }
+  );
+
+  anim.onfinish = () => {
+    el.remove(); 
+    createFallingItem(); // crear otro cuando termina, infinitamente
+  };
+}
+
+/* --- Generar muchos al inicio --- */
+for (let i = 0; i < 30; i++) {
+  setTimeout(createFallingItem, i * 300);
+}
+
+/* ===== MARIPOSAS ===== */
+function createButterfly(){
+  const b=document.createElement("div");
+  b.className="butterfly";
+  b.innerHTML=`
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <path d="M32 32 C5 10 0 30 20 35 C0 50 10 60 32 32Z" fill="rgba(255,255,255,0.8)" />
+      <path d="M32 32 C59 10 64 30 44 35 C64 50 54 60 32 32Z" fill="rgba(255,255,255,0.8)" />
+      <circle cx="32" cy="32" r="3" fill="rgba(255,255,255,0.6)" />
+    </svg>`;
+  b.style.animation="glowTrail 2s ease-in-out infinite alternate";
+  document.body.appendChild(b);
+  animateButterfly(b);
+}
+function animateButterfly(b){
+  let x=Math.random()*100;
+  let y=Math.random()*100;
+  let speedX=(Math.random()*0.3-0.15);
+  let speedY=(Math.random()*0.3-0.15);
+  function fly(){
+    x+=speedX;
+    y+=speedY;
+    if(x<0||x>100) speedX*=-1;
+    if(y<0||y>100) speedY*=-1;
+    b.style.left=x+"vw";
+    b.style.top=y+"vh";
+    requestAnimationFrame(fly);
+  }
+  fly();
+}
+for(let i=0;i<30;i++) createButterfly();
+
+/* ===== Movimiento con mouse y touch ===== */
+const rotatableEl = document.getElementById("rotatable");
+let rotX = 0, rotY = 0;
+function updateRotation(clientX, clientY) {
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+  const percentX = (clientX - centerX) / centerX;
+  const percentY = (clientY - centerY) / centerY;
+  rotY = percentX * 10;
+  rotX = -percentY * 10;
+  rotatableEl.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+}
+window.addEventListener("mousemove", (e)=>updateRotation(e.clientX, e.clientY));
+window.addEventListener("touchmove", (e)=>{
+  const touch = e.touches[0];
+  if(touch) updateRotation(touch.clientX, touch.clientY);
+});
+
+/* ===== MÚSICA ===== */
+const music=document.getElementById("bg-music");
+const btn=document.getElementById("music-btn");
+let playing=false;
+btn.onclick=async()=>{
+  if(!playing){
+    await music.play();
+    btn.textContent="⏸️";
+    playing=true;
+  }else{
+    music.pause();
+    btn.textContent="🎵";
+    playing=false;
+  }
+};
+</script>
+</body>
+</html>
